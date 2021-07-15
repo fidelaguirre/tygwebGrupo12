@@ -36,11 +36,12 @@ function consultarApiBitcoin(){
             },
           }).then(response => {
             console.log('Data: ', response);
+            alert('Nuevos valores guardados!');
           })
           .catch(error => {
             console.log('An error occurred:', error.response);
           });
-  }, 1000);
+  }, 500);
 }
 
 function getCriptomoneda(){
@@ -50,34 +51,49 @@ function getCriptomoneda(){
     }
   }).then(response => {
     console.log('Data: ', response.data, response);
-    longitud = response.data.length-1;
-    cripto = response.data[longitud];
+    cripto = response.data;
   })
   .catch(error => {
     console.log('An error occurred:', error);
   });
 
   setTimeout(function(){
-    $('#resultados').html(' ');
+    var fecha;
+    var hora;
+    cripto = cripto.slice(Math.max(cripto.length - 10, 1));
+    cripto.sort((a, b) => b.update_at - a.update_at).reverse();
+    $('#t-body').html(' ');
 
-    $('#resultados').append('<table class="table">'+
-                              '<thead>'+
-                                '<tr>'+
-                                  '<th scope="col">#</th>'+
-                                  '<th scope="col">Fecha</th>'+
-                                  '<th scope="col">Valor en ARS</th>'+
-                                  '<th scope="col">Valor en USD</th>'+
-                                  '<th scope="col">Eliminar</th>'+
-                                '</tr>'+
-                              '</thead>'+
-                              '<tbody>'+
-                                forEach((cripto, i) => {
-                                  '<tr>'+
+      cripto.forEach(function each(moneda, indice){
+        update = new Date(moneda.updated_at);
+        console.log(update);
+        fecha = update.getDate() + "/" + update.getMonth() + "/" + update.getFullYear();
+        hora = update.toString().split(' ')[4];
+        $('#t-body').append('<tr>'+
+            '<th scope="row">'+indice+'</th>'+
+            '<td>'+fecha+ ' - '+ hora +'</td>'+
+            '<td>'+moneda.ars+'</td>'+
+            '<td>'+moneda.usd+'</td>'+
+            '<td><a class="pl-3 primary" onclick="borrarEntrada(' + moneda.id + ')"><i class="far fa-trash-alt"></i></a></td>'+
+        '</tr>');
+    });
 
-                                  '</tr>'
-                                });+
-                              '</tbody>'+
-                              '</table>');
+  }, 500);
+}
 
-  }, 1000);
+function borrarEntrada(id){
+  axios.delete('http://localhost:1337/criptos/'+id, {
+    headers: {
+      Authorization: token,
+    }
+  }).then(response => {
+    console.log('Data: ', response.data, response);
+    alert("Entrada eliminada");
+    setTimeout(function(){
+      getCriptomoneda();
+    }, 500);
+  })
+  .catch(error => {
+    console.log('An error occurred:', error);
+  });
 }
