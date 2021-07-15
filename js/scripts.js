@@ -1,3 +1,5 @@
+google.charts.load('current', {packages: ['corechart', 'bar']});
+google.charts.setOnLoadCallback(drawMaterial);
 var token;
 var btc;
 var cripto;
@@ -12,7 +14,7 @@ function login(){
           token = "Bearer "+response.data.jwt;
         })
         .catch(error => {
-          console.log('An error occurred:', error.response);
+          console.log('An error occurred:', error.response.data.statusCode);
         });
 }
 
@@ -36,7 +38,7 @@ function consultarApiBitcoin(){
             },
           }).then(response => {
             console.log('Data: ', response);
-            alert('Nuevos valores guardados!');
+            alert('¡Nuevos valores guardados! Actualizar tabla para ver los cambios.');
           })
           .catch(error => {
             console.log('An error occurred:', error.response);
@@ -60,9 +62,23 @@ function getCriptomoneda(){
   setTimeout(function(){
     var fecha;
     var hora;
-    cripto = cripto.slice(Math.max(cripto.length - 10, 1));
+    cripto = cripto.slice(Math.max(cripto.length - 10, 0));
     cripto.sort((a, b) => b.update_at - a.update_at).reverse();
-    $('#t-body').html(' ');
+    $('#resultados').html(' ');
+
+    $('#resultados').append('<table class="table">'+
+                            '<thead>'+
+                              '<tr>'+
+                                '<th scope="col">#</th>'+
+                                '<th scope="col">Fecha y Hora</th>'+
+                                '<th scope="col">Valor en ARS</th>'+
+                                '<th scope="col">Valor en USD</th>'+
+                                '<th scope="col">Eliminar</th>'+
+                              '</tr>'+
+                            '</thead>'+
+                            '<tbody id="t-body">'+
+                            '</tbody>'+
+                          '</table>');
 
       cripto.forEach(function each(moneda, indice){
         update = new Date(moneda.updated_at);
@@ -96,4 +112,47 @@ function borrarEntrada(id){
   .catch(error => {
     console.log('An error occurred:', error);
   });
+}
+
+function grafico(){
+  var bitcoin;
+  axios.get('http://localhost:1337/criptos', {
+    headers: {
+      Authorization: token,
+    }
+  }).then(response => {
+    console.log('Data: ', response.data, response);
+    bitcoin = response.data;
+  })
+  .catch(error => {
+    console.log('An error occurred:', error);
+  });
+  setTimeout(function(){
+    $('#resultados').html(' ');
+    var arrayPrueba = [['Update', 'Precio bitcoin ARS', 'Precio bitcoin USD']];
+
+          //Info
+          bitcoin.forEach(function(update, indice){
+            arrayPrueba.push([indice,update.ars,update.usd]);
+          });
+
+          console.log(bitcoin, arrayPrueba);
+
+          var data = google.visualization.arrayToDataTable(arrayPrueba);
+
+          var materialOptions = {
+                                chart: {
+                                  title: 'Precio del bitcoin'
+                                },
+                                hAxis: {
+                                  title: 'Bitcoin',
+                                  minValue: 0,
+                                },
+                                bars: 'vertical'
+                              };
+        var materialChart = new google.charts.Bar(document.getElementById('resultados'));
+        materialChart.draw(data, materialOptions);
+
+  }, 500);
+
 }
